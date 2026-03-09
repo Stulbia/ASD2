@@ -1,6 +1,6 @@
 #include "setSimple.h"
 
-// Fix: initialize vector with `size` false-values
+//initialize vector with false
 setSimple::setSimple(int size) : N(size), elements(size, false) {}
 
 void setSimple::insert(int x) {

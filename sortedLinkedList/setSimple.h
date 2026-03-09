@@ -1,4 +1,3 @@
-// setSimple.h
 #ifndef SETSIMPLE_H
 #define SETSIMPLE_H
 

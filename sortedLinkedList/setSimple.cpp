@@ -1,4 +1,3 @@
-// setSimple.cpp
 #include "setSimple.h"
 
 setSimple::setSimple() : head(nullptr) {}
@@ -33,9 +32,9 @@ setSimple& setSimple::operator=(const setSimple& other) {
 }
 
 void setSimple::insertNode(int x) {
-    // wstaw x w odpowiednie miejsce zachowując posortowanie
+    // wstaw x, zachowaj posortowanie
     if (!head || head->val > x) {
-        head = new Node(x, head);  // na początku
+        head = new Node(x, head);
         return;
     }
     Node* cur = head;
@@ -102,7 +101,7 @@ setSimple setSimple::operator*(const setSimple& other) const {
     return result;
 }
 
-// elementy z A które NIE są w B
+// elementy z A które NIE  w B
 setSimple setSimple::operator-(const setSimple& other) const {
     setSimple result;
     Node* a = head;
@@ -124,5 +123,5 @@ bool setSimple::operator==(const setSimple& other) const {
         a = a->next;
         b = b->next;
     }
-    return !a && !b; // obie listy muszą skończyć się równocześnie
+    return !a && !b;
 }

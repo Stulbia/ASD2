@@ -6,22 +6,21 @@
 class setSimple {
 private:
     std::vector<bool> elements;
-    int N; // Rozmiar uniwersum
+    int N; // uniwersum
 
 public:
     // Konstruktor: tworzy pusty zbiór dla N elementów
     explicit setSimple(int size);
 
-    // Operacje na elementach
-    void insert(int x);     // x to indeks 0...N-1
+    void insert(int x);
     void remove(int x);
     bool contains(int x) const;
 
-    // Operacje na zbiorach (zwracają nowy obiekt)
-    setSimple operator+(const setSimple& other) const; // Suma (A U B)
-    setSimple operator*(const setSimple& other) const; // Część wspólna (A n B)
-    setSimple operator-(const setSimple& other) const; // Różnica (A - B)
-    bool operator==(const setSimple& other) const;    // Identyczność (A == B)
+    // operacje na zbiorach => nowy obiekt
+    setSimple operator+(const setSimple& other) const; // A U B
+    setSimple operator*(const setSimple& other) const; // A n B
+    setSimple operator-(const setSimple& other) const; // A - B
+    bool operator==(const setSimple& other) const;    // A == B
 };
 
 #endif

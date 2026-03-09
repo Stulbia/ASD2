@@ -10,6 +10,7 @@ int main() {
     b.insert(3);
     b.insert(4);
 
+    //przeładowane operatory
     auto c = a + b; // {1, 3, 4}
     auto d = a * b; // {3}
     auto e = a - b; // {1}
