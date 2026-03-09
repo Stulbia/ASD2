@@ -1,22 +1,29 @@
-#include "setSimple.h"
+#include "tester.h"
 #include <iostream>
+#include <cstring>
 
-int main() {
-    auto a = setSimple();
-    a.insert(1);
-    a.insert(3);
+int main(int argc, char* argv[]) {
+    // Sprawdzenie flagi -T
+    bool runTests = false;
+    int repeat = 1; // domyślna liczba powtórzeń
 
-    auto b = setSimple();
-    b.insert(3);
-    b.insert(4);
+    for (int i = 1; i < argc; ++i) {
+        if (std::string(argv[i]) == "-T") {
+            runTests = true;
+        } else {
+            // Zakładamy, że kolejna liczba to liczba powtórzeń
+            try {
+                repeat = std::stoi(argv[i]);
+            } catch (...) {}
+        }
+    }
 
-    auto c = a + b; // {1, 3, 4}
-    auto d = a * b; // {3}
-    auto e = a - b; // {1}
-
-    std::cout << "a+b contains 4: " << c.contains(4) << "\n"; // 1
-    std::cout << "a*b contains 3: " << d.contains(3) << "\n"; // 1
-    std::cout << "a-b contains 1: " << e.contains(1) << "\n"; // 1
+    if (runTests) {
+        runCorrectnessTests();
+        runBenchmark(repeat, "results.csv");
+    } else {
+        std::cout << "Uzycie: ./program -T [liczba_powtorzen]\n";
+    }
 
     return 0;
 }

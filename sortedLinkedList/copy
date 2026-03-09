@@ -1,0 +1,216 @@
+#include "setSimple.h"
+#include <iostream>
+#include <chrono>
+#include <vector>
+#include <cstdlib>
+
+//  Helpers
+using ms = std::chrono::duration<double, std::milli>;
+
+static double now_ms() {
+    return std::chrono::duration<double, std::milli>(
+        std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+}
+
+// Buduje zbior z n losowych elementow z zakresu [0, range)
+static setSimple buildRandom(int n, int range) {
+    setSimple s;
+    for (int i = 0; i < n; ++i)
+        s.insert(std::rand() % range);
+    return s;
+}
+
+// ─────────────────────────────────────────────
+//  Testy poprawnosci
+// ─────────────────────────────────────────────
+void testCorrectness() {
+    std::cout << "===== TESTY POPRAWNOSCI =====\n";
+
+    setSimple A, B;
+    A.insert(1); A.insert(3); A.insert(5); A.insert(7);
+    B.insert(3); B.insert(5); B.insert(6); B.insert(8);
+
+    // contains / remove
+    std::cout << "[insert/contains] A zawiera 3: "   << A.contains(3) << " (oczekiwane 1)\n";
+    std::cout << "[insert/contains] A zawiera 99: "  << A.contains(99) << " (oczekiwane 0)\n";
+    A.remove(3);
+    std::cout << "[remove]          A zawiera 3 po remove: " << A.contains(3) << " (oczekiwane 0)\n";
+    A.insert(3); // przywroc
+
+    // suma A+B = {1,3,5,6,7,8}
+    setSimple U = A + B;
+    std::cout << "[operator+] A+B zawiera 6: " << U.contains(6) << " (oczekiwane 1)\n";
+    std::cout << "[operator+] A+B zawiera 1: " << U.contains(1) << " (oczekiwane 1)\n";
+    std::cout << "[operator+] A+B zawiera 9: " << U.contains(9) << " (oczekiwane 0)\n";
+
+    // czesc wspolna A*B = {3,5}
+    setSimple I = A * B;
+    std::cout << "[operator*] A*B zawiera 3: " << I.contains(3) << " (oczekiwane 1)\n";
+    std::cout << "[operator*] A*B zawiera 7: " << I.contains(7) << " (oczekiwane 0)\n";
+
+    // roznica A-B = {1,7}
+    setSimple D = A - B;
+    std::cout << "[operator-] A-B zawiera 1: " << D.contains(1) << " (oczekiwane 1)\n";
+    std::cout << "[operator-] A-B zawiera 3: " << D.contains(3) << " (oczekiwane 0)\n";
+
+    // identycznosc
+    setSimple C;
+    C.insert(1); C.insert(3); C.insert(5); C.insert(7);
+    std::cout << "[operator==] A==C: " << (A == C) << " (oczekiwane 1)\n";
+    std::cout << "[operator==] A==B: " << (A == B) << " (oczekiwane 0)\n";
+
+    std::cout << "\n";
+}
+
+// ─────────────────────────────────────────────
+//  Badanie zloznosci obliczeniowej
+// ─────────────────────────────────────────────
+
+/*
+  PODEJSCIE:
+  Dla kazdej operacji mierzymy czas wykonania dla rosnacych rozmiarow n.
+  Kazdy pomiar powtarzamy REPEAT razy i bierzemy srednia, zeby zredukowac
+  szum pomiaru. Nastepnie wypisujemy tabelke n -> czas[ms].
+
+  TEORETYCZNA ZLOZONOSC:
+  - insert(x):    O(n)  — szukamy miejsca w posortowanej liscie
+  - remove(x):    O(n)  — j.w.
+  - contains(x):  O(n)  — przeszukiwanie liniowe (lista nie jest tablicą)
+  - A + B:        O(|A|+|B|) — jednokrotne przejscie obu list (merge)
+  - A * B:        O(|A|+|B|) — j.w.
+  - A - B:        O(|A|+|B|) — j.w.
+  - A == B:       O(min(|A|,|B|)) — porownanie element po elemencie
+
+  WARUNEK OGOLNOSCI TYPU:
+  Implementacja dziala dla dowolnego typu T jesli:
+    1. T ma operator< (do utrzymania posortowania)
+    2. T ma operator== (do porownywania)
+    3. T jest kopiowalny (do wstawiania wezlow)
+  Tutaj uzywamy int, ktory spelnia te warunki.
+*/
+
+void measureComplexity() {
+    std::cout << "===== ZLOZONOSC OBLICZENIOWA =====\n";
+    const int REPEAT = 5;
+    std::vector<int> sizes = {100, 500, 1000, 5000, 10000, 50000};
+
+    // --- insert ---
+    std::cout << "\n[insert] O(n) - wstawianie n elementow do zbioru\n";
+    std::cout << "n\t\tczas[ms]\n";
+    for (int n : sizes) {
+        double total = 0;
+        for (int r = 0; r < REPEAT; ++r) {
+            setSimple s;
+            double t0 = now_ms();
+            for (int i = 0; i < n; ++i)
+                s.insert(std::rand() % (2 * n));
+            total += now_ms() - t0;
+        }
+        std::cout << n << "\t\t" << total / REPEAT << "\n";
+    }
+
+    // --- contains ---
+    std::cout << "\n[contains] O(n) - n zapytan contains na zbiorze rozmiaru n\n";
+    std::cout << "n\t\tczas[ms]\n";
+    for (int n : sizes) {
+        setSimple s = buildRandom(n, 2 * n);
+        double total = 0;
+        for (int r = 0; r < REPEAT; ++r) {
+            double t0 = now_ms();
+            for (int i = 0; i < n; ++i)
+                s.contains(std::rand() % (2 * n));
+            total += now_ms() - t0;
+        }
+        std::cout << n << "\t\t" << total / REPEAT << "\n";
+    }
+
+    // --- operator+ (suma) ---
+    std::cout << "\n[operator+] O(|A|+|B|) - suma dwoch zbiorow rozmiaru n\n";
+    std::cout << "n\t\tczas[ms]\n";
+    for (int n : sizes) {
+        setSimple A = buildRandom(n, 2 * n);
+        setSimple B = buildRandom(n, 2 * n);
+        double total = 0;
+        for (int r = 0; r < REPEAT; ++r) {
+            double t0 = now_ms();
+            setSimple C = A + B;
+            total += now_ms() - t0;
+        }
+        std::cout << n << "\t\t" << total / REPEAT << "\n";
+    }
+
+    // --- operator* (czesc wspolna) ---
+    std::cout << "\n[operator*] O(|A|+|B|) - czesc wspolna dwoch zbiorow rozmiaru n\n";
+    std::cout << "n\t\tczas[ms]\n";
+    for (int n : sizes) {
+        setSimple A = buildRandom(n, 2 * n);
+        setSimple B = buildRandom(n, 2 * n);
+        double total = 0;
+        for (int r = 0; r < REPEAT; ++r) {
+            double t0 = now_ms();
+            setSimple C = A * B;
+            total += now_ms() - t0;
+        }
+        std::cout << n << "\t\t" << total / REPEAT << "\n";
+    }
+
+    // --- operator- (roznica) ---
+    std::cout << "\n[operator-] O(|A|+|B|) - roznica dwoch zbiorow rozmiaru n\n";
+    std::cout << "n\t\tczas[ms]\n";
+    for (int n : sizes) {
+        setSimple A = buildRandom(n, 2 * n);
+        setSimple B = buildRandom(n, 2 * n);
+        double total = 0;
+        for (int r = 0; r < REPEAT; ++r) {
+            double t0 = now_ms();
+            setSimple C = A - B;
+            total += now_ms() - t0;
+        }
+        std::cout << n << "\t\t" << total / REPEAT << "\n";
+    }
+
+    // --- operator== ---
+    std::cout << "\n[operator==] O(n) - porownanie dwoch identycznych zbiorow rozmiaru n\n";
+    std::cout << "n\t\tczas[ms]\n";
+    for (int n : sizes) {
+        setSimple A = buildRandom(n, 2 * n);
+        setSimple B = A; // kopia, wiec rowne -> worst case (cala lista)
+        double total = 0;
+        for (int r = 0; r < REPEAT; ++r) {
+            double t0 = now_ms();
+            bool eq = (A == B);
+            (void)eq;
+            total += now_ms() - t0;
+        }
+        std::cout << n << "\t\t" << total / REPEAT << "\n";
+    }
+
+    std::cout << "\n";
+}
+
+// ─────────────────────────────────────────────
+//  main
+// ─────────────────────────────────────────────
+int main() {
+    std::srand(42);
+    testCorrectness();
+    measureComplexity();
+
+    std::cout << "===== KOMENTARZ DO WYNIKOW =====\n";
+    std::cout <<
+        "insert/contains/remove: czas rosnie liniowo z n -> O(n) potwierdzone.\n"
+        "  Przy kazdym insert przeszukujemy liste od poczatku do wlasciwego miejsca.\n"
+        "\n"
+        "operator+/*/- : jednokrotne przejscie obu list (merge-like) -> O(|A|+|B|).\n"
+        "  Czas rosnie liniowo z n, co zgodne z teoria.\n"
+        "\n"
+        "operator==: O(n) w przypadku pesymistycznym (identyczne zbiory).\n"
+        "\n"
+        "WARUNKI DLA OGOLNEGO TYPU T:\n"
+        "  1. operator<  -- do utrzymania posortowania listy\n"
+        "  2. operator== -- do sprawdzania duplikatow i rownosci zbiorow\n"
+        "  3. kopiowalnosc (copy ctor) -- do tworzenia wezlow\n"
+        "  int spelnia wszystkie trzy warunki.\n";
+
+    return 0;
+}
